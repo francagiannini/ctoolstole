@@ -1,0 +1,59 @@
+[Parameters]	
+PLoweLayer	0.312	
+offset	0	
+depth	100	
+PupperLayer	0.48	
+Initial pMC(%)	0	
+Initial C(t/ha)	 70.4	
+C/N	7.166667	
+Amended C	0	
+Crop
+[HUM]
+HUMdecompositionrate	0.0028	
+[FOM]
+FOMdecompositionrate	0.12	
+clayfraction	0.0405	
+tF	0.003	
+[ROM]
+ROMfraction	0.012	
+ROMdecompositionrate	3.858e-05	
+Manure
+[HUM]	
+HUMdecompositionrate	0.0028	
+HumFraction	0.192	
+[FOM]
+FOMdecompositionrate	0.12	
+clayfraction	0.0405	
+tF	0	
+[ROM]
+ROMfraction	0	
+ROMdecompositionrate	0	
+CropC14
+[HUM]	
+HUMdecompositionrate	0.0028	
+[FOM]
+FOMdecompositionrate	0	
+clayfraction	0.0405	
+tF	0	
+[ROM]
+ROMfraction	0	
+ROMdecompositionrate	0	
+decay rate	0	
+ManureC14
+[HUM]	
+HUMdecompositionrate	0.0028	
+HumFraction	0.192	
+[FOM]
+FOMdecompositionrate	0	
+clayfraction	0.0405	
+tF	0	
+[ROM]
+ROMfraction	0	
+ROMdecompositionrate	0	
+decay rate	0	
+[FOM]
+FOMfractionPlantTopLayer	0.03	
+FOMfractionPlantLowerLayer	0.03	
+FOMfractionPlantTopLayerC14	0.032	
+FOMfractionPlantLowerLayerC14	0.03	
+[end] 	

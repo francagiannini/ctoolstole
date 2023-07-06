@@ -1,0 +1,4 @@
+input	O:\Tech_AGRO\Jornaer\Franca\example_CTOOL\input.txt
+data	O:\Tech_AGRO\Jornaer\Franca\example_CTOOL\data.txt
+TemperatureData	O:\Tech_AGRO\Jornaer\Franca\example_CTOOL\temperature.txt
+outputDir	O:\Tech_AGRO\Jornaer\Franca\example_CTOOL\
