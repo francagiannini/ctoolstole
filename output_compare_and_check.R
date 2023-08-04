@@ -19,9 +19,35 @@ out_exe_2.3 <- read.table(
                     CSub="total.2.1.")
 
 bind_cols(out_mauro_sa, out_exe_2.3) |> 
-  ggplot(aes(CTop...1,CTop...4))+
+  ggplot(aes(y=CTop...1,x=CTop...4))+
+  geom_point()+
+  geom_abline(intercept = 0, slope=1)+
+  geom_line()+
+  labs(y="C# ",x=" c2.3 ")+
+  theme_bw()
+
+bind_cols(out_mauro_sa, out_exe_2.3) |> 
+  ggplot(aes(CSub...2,CSub...5))+
   geom_point()+
   geom_line()
 
+bind_cols(out_mauro_sa, out_exe_2.3) |> #cor()
+  mutate(dif_top=CTop...1-CTop...4 ,
+         dif_sub=CSub...2-CSub...5) |> 
+  pivot_longer(cols = c(dif_top,dif_sub), 
+               names_to = "output",values_to = "difference" ) |> 
+  ggplot(aes(y=difference,x=id, col=output))+
+  geom_point()+
+  geom_line()+
+  ylab("difference C# vs. c2.3 ")+
+  theme_bw()
 
-
+bind_cols(out_mauro_sa, out_exe_2.3) |> #cor()
+  mutate(diff_top=CTop...1-CTop...4 ,
+         diff_sub=CSub...2-CSub...5) |> 
+  mutate(dif_rel_top=dif_top/mean(CTop...1)*100) |> 
+  ggplot(aes(y=dif_rel_top,x=id))+
+  geom_point()+
+  geom_line()+
+  ylab("c#-c2.3 difference")+
+  theme_bw()
