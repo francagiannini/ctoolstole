@@ -1,11 +1,14 @@
 library(tidyverse)
 
-# Inputs ----
+# I. Inputs ----
 
 ## Temperature ----
 temperatures <- read.table("InputFiles/temp55years.txt")
-colnames(temperatures) <- c("meanmonthlytemp")
+colnames(temperatures) <- c("temp_m")
 head(temperatures)
+
+temp_minmax <- read.table("InputFiles/temp_ranges_foulum.txt", header = T) |> 
+  mutate(temp_amp =max-min) 
 
 ## Soil ----
 soil <- as.data.frame(readLines("InputFiles/input.txt"))
@@ -36,30 +39,94 @@ colnames(cinp) <-c("year",
                    "Cinp_plant_top","Cinp_plant_sub",
                    "Cinp_Cmanure", "C14plant","C14manure")
 
-# functions ----
+# 2. functions ----
+
+# temperature dependence
+# modifying decomposition as function of monthly temperatures 
+
+#https://open.library.okstate.edu/rainorshine/chapter/13-4-sub-surface-soil-temperatures/
 
 
+temperature <- #function(depth, temp_m, temp_amp, month) {
+  function(j) {
+  #browser()
+  
+  depth_h = as.numeric(j["depth"])/2
+  
+  julianDay = as.numeric(j["month"]) * 30.4166
+  
+  t = (julianDay + soil_df$offset_soilInit)
+
+  #soil thermal difussivity see https://doi.org/10.1016/j.biosystemseng.2017.06.011
+  #dependent on soil moisture
+  
+  Th_diff <- 0.35E-6
+
+  #angular frequency
+  
+  rho <- 1.61803 * 2 / (365 * 24 * 3600)
+    
+  dampDepth <- sqrt(2 * Th_diff / rho)
+    
+  Td <-
+    as.numeric(j["temp_m"]) + as.numeric(j["temp_amp"])*exp(- depth_h / dampDepth) * sin(rho * t * 24 * 3600- depth_h / dampDepth)
+    #  
+    
+tempCoefficient <- 
+  7.24 * exp(-3.432 + 0.168 * Td * (1 - 0.5 * Td / 36.9))
+  
+  data.frame("tempCoefficient" = tempCoefficient,
+    "soil_temp"= Td) 
+  }
+
+tcoeff_df <- rbind(
+  data.frame(
+    temperatures,
+    "temp_amp" = as.numeric(rep(temp_minmax$temp_amp, 55)),
+    "month" = as.numeric(rep(seq(1, 12, 1), 55)),
+    "depth" = 25,
+    "amplitude"="variable monthly"
+  ),
+  data.frame(
+    temperatures,
+    "temp_amp" = as.numeric(rep(temp_minmax$temp_amp, 55)),
+    "month" = as.numeric(rep(seq(1, 12, 1), 55)),
+    "depth" = 100,
+    "amplitude"="variable monthly"
+  ),
+  data.frame(
+    temperatures,
+    "temp_amp" = as.numeric(max(temperatures)-min(temperatures)),
+    "month" = as.numeric(rep(seq(1, 12, 1), 55)),
+    "depth" = 25,
+    "amplitude"="complete period"
+  ),
+  data.frame(
+    temperatures,
+    "temp_amp" = as.numeric(max(temperatures)-min(temperatures)),
+    "month" = as.numeric(rep(seq(1, 12, 1), 55)),
+    "depth" = 100,
+    "amplitude"="complete period"
+  )
+)
+
+tcoeff_example <- cbind(tcoeff_df,
+                        do.call("rbind", apply(tcoeff_df, 1, temperature)))
 
 
-# modifiying decomposition as afunction of monthly temperatures
+tcoeff_example |>
+ggplot(aes(y=soil_temp, x=month, 
+           col=as.character(depth),
+           )) +
+  geom_point(aes(shape=as.character(depth), alpha=0.4, size=1))+
+  geom_smooth(aes(group=as.character(depth)), se=FALSE) + 
+  facet_grid(~amplitude)+
+  theme_classic()
 
+#hist(tcoeff_example$tempCoefficient)
 
-tempdependence <- function(temp_m){
-  tempCoefficient <- 
-    7.24 * exp(-3.432 + 0.168 * temp_m * (1 - 0.5 * temp_m / 36.9))
-  tempCoefficient
-}
-
-temp_m=temperatures$meanmonthlytemp
-
-data.frame("tempCoefficient" = do.call(rbind, lapply(temp_m, tempdependence)),
-           "temp_m" = temperatures$meanmonthlytemp,
-           "month"=rep(seq(1,12,1),length(temp_m)/12)) |>
-ggplot(aes(y=tempCoefficient, x=temp_m)) + geom_line() + theme_classic()
-ggplot(aes(y=tempCoefficient, x=month)) + geom_smooth() + geom_point()+ theme_classic()
-
-## turnover ----
-
+# turnover
+# decay rate modified by temperature
 # C decay in each pool  
 
 decay <- function(amount, k, tempCoefficient ){
@@ -67,11 +134,10 @@ decay <- function(amount, k, tempCoefficient ){
   amount
 }
 
-
-
 # humification coeficcient as function of clay content
 # k_hum
-humification <- function(clayfrac){
+
+humification <- function(clayfrac) {
   R= 1.67 * (1.85 + 1.6 * exp(-7.86 * clayfrac))
   h= 1/(R+1)
   
@@ -93,29 +159,28 @@ inmovilization <- function(cn){
   CNfraction
 }
 
-
 cn=seq(8,30,0.5)
 
 data.frame("cnfrac" = do.call(rbind, lapply(cn, inmovilization)),
            "cn" = cn) |>
   ggplot(aes(y=cnfrac, x=cn)) + geom_line() + theme_classic()
 
-# Runge-Kutta function ----
+# Runge-Kutta function
 
 Rk4decay <- function(t0, u0, dt, k, tempCoefficient) {
   
   tempCoefficient=tempdependence(temp_m)
   
-  f1 <- func(t0, u0, k, tempCoefficient)
-  f2 <- func(t0 + dt / 2, u0 + dt * f1 / 2, k, tempCoefficient)
-  f3 <- func(t0 + dt / 2, u0 + dt * f2 / 2, k, tempCoefficient)
-  f4 <- func(t0 + dt, u0 + dt * f3, k, tempCoefficient)
+  f1 <- funcRk4step(t0, u0, k, tempCoefficient)
+  f2 <- funcRk4step(t0 + dt / 2, u0 + dt * f1 / 2, k, tempCoefficient)
+  f3 <- funcRk4step(t0 + dt / 2, u0 + dt * f2 / 2, k, tempCoefficient)
+  f4 <- funcRk4step(t0 + dt, u0 + dt * f3, k, tempCoefficient)
   
   u1 <- u0 + dt * (f1 + 2 * f2 + 2 * f3 + f4) / 6
   return(u1)
 }
 
-func <- function(time, amount, k, tempCoefficient) {
+funcRk4step <- function(time, amount, k, tempCoefficient) {
   value <- amount * -k * tempCoefficient
   return(value)
 }
@@ -184,7 +249,7 @@ DecompositionFom <-
 
 
 
-# starting soil conditions and rates constants in time ----
+# 3. starting soil conditions and rates constants in time ----
 
 extraCarbon <-  soil_df$`Amended C_soilInit` / 12
 #CNfraction <- soil_df$`C/N_soilInit`
@@ -198,56 +263,77 @@ startCAmount_sub <- soil_df$`Initial C(t/ha)_soilInit` * 1-Cproptop
 humcPlant_top <-
   startCAmount_top * soil_df$PupperLayer_soilInit * inmovilization(soil_df$`C/N_soilInit`)
 romcPlant_top <- startCAmount_top - humcPlant_top
-
 humcPlant_sub <-
   startCAmount_sub * soil_df$PLoweLayer_soilInit * inmovilization(soil_df$`C/N_soilInit`)
 romcPlant_sub <- startCAmount_sub - humcPlant_sub
-
 humificationPlant <- humification(soil_df$clayfraction_crop)
 
-# Assuming Data.Values is a data frame in R containing the necessary values
+# 4. general turnover flow ----
+# plantinputs
 
-# Initialize data frames to store the results
-co2_results <- data.frame(matrix(NA, nrow = nrow(cinp), ncol = 6))
-total_amount <- data.frame(matrix(NA, nrow = nrow(cinp), ncol = 14))
-transport_results <- data.frame(matrix(NA, nrow = nrow(cinp), ncol = 3))
+fom_add_plant_top <- cinp$Cinp_plant_top[i]
+# mnure 
+fom_add_predecomp_top <- cinp$Cinp_Cmanure[i] - fHUM*cinp$cinp$Cinp_Cmanure[i]
 
-# Loop through each data row in Data.Values
-for (i in 1:nrow(cinp)) {
-  dataYearValues <- cinp[i, ]
-  julianDay <- 0
-  
-  # Loop through each month (1 to 12)
-    
-  # Implement the region-specific calculations for different months (if conditions)
-    # ...  
-  for (month in 1:12) {
-    julianDay <- month * 30.4166
+hum_add <- fHUM*cinp$Cinp_plant_top[i]
 
-    
-  # Calculate the values using the appropriate functions for DecompositionFom, DecompositionHum, and DecompositionRom
-   #co2FomPlant = DecompositionFom(ref fomcPlant, Variables.FOMdecompositionratePlant, Variables.TFPlant, humificationPlant, ref humcPlant, WITH_TRANSPORT, false, 0, ref transportFomPlant);
-    
-    # Store the results in the corresponding data frames
-    co2_results[i, ] <- c(co2FomPlant[1], co2FomPlant[2], co2HumPlant[1], co2HumPlant[2], co2RomPlant[1], co2RomPlant[2])
-    total_amount[i, ] <- c(fomcPlant[1], humcPlant[1], romcPlant[1], fomcManure[1], humcManure[1], romcManure[1], fomcPlantC14[1], humcPlantC14[1], romcPlantC14[1], fomcManureC14[1], humcManureC14[1], romcManureC14[1], (fomcPlantC14[1] + humcPlantC14[1] + romcPlantC14[1] + fomcManureC14[1] + humcManureC14[1] + romcManureC14[1]) / (fomcPlant[1] + humcPlant[1] + romcPlant[1] + fomcManure[1] + humcManure[1] + romcManure[1]) * 100, (fomcPlant[1] + humcPlant[1] + romcPlant[1] + fomcManure[1] + humcManure[1] + romcManure[1]))
-    transport_results[i, ] <- c(transportFomPlant + transportFomManure, transportHumPlant + transportHumManure, transportRomPlant + transportRomManure)
-    
-    # Increment temperatureValuePosition (if necessary)
-    # ...
-  }
-}
+#kFOM should be affected by temp 
 
-# If Mode.Value == 2, co2_results, total_amount, and transport_results will contain the final results for each month
-# If Mode.Value == 3, use co2_results, total_amount, and transport_results to create corresponding data frames or tables as needed
+tempCofficent <- tempdependence()
+
+kFOM <- soil_df$FOMdecompositionrate_crop*tempCofficent
+
+fom_decomp <- (fomprev+fom_add_plant_top)*kFOM
+
+fom_toLowerLayer<- fom_afte_fomdecomp*soil_df$tF_crop
 
 
 
-# transport vertical ----
 
-inptop <- cinp[1,]
+# # Assuming Data.Values is a data frame in R containing the necessary values
+# 
+# # Initialize data frames to store the results
+# co2_results <- data.frame(matrix(NA, nrow = nrow(cinp), ncol = 6))
+# total_amount <- data.frame(matrix(NA, nrow = nrow(cinp), ncol = 14))
+# transport_results <- data.frame(matrix(NA, nrow = nrow(cinp), ncol = 3))
+# 
+# # Loop through each data row in Data.Values
+# for (i in 1:nrow(cinp)) {
+#   dataYearValues <- cinp[i, ]
+#   julianDay <- 0
+#   
+#   # Loop through each month (1 to 12)
+#     
+#   # Implement the region-specific calculations for different months (if conditions)
+#     # ...  
+#   for (month in 1:12) {
+#     julianDay <- month * 30.4166
+# 
+#     
+#   # Calculate the values using the appropriate functions for DecompositionFom, DecompositionHum, and DecompositionRom
+#    #co2FomPlant = DecompositionFom(ref fomcPlant, Variables.FOMdecompositionratePlant, Variables.TFPlant, humificationPlant, ref humcPlant, WITH_TRANSPORT, false, 0, ref transportFomPlant);
+#     
+#     # Store the results in the corresponding data frames
+#     co2_results[i, ] <- c(co2FomPlant[1], co2FomPlant[2], co2HumPlant[1], co2HumPlant[2], co2RomPlant[1], co2RomPlant[2])
+#     total_amount[i, ] <- c(fomcPlant[1], humcPlant[1], romcPlant[1], fomcManure[1], humcManure[1], romcManure[1], fomcPlantC14[1], humcPlantC14[1], romcPlantC14[1], fomcManureC14[1], humcManureC14[1], romcManureC14[1], (fomcPlantC14[1] + humcPlantC14[1] + romcPlantC14[1] + fomcManureC14[1] + humcManureC14[1] + romcManureC14[1]) / (fomcPlant[1] + humcPlant[1] + romcPlant[1] + fomcManure[1] + humcManure[1] + romcManure[1]) * 100, (fomcPlant[1] + humcPlant[1] + romcPlant[1] + fomcManure[1] + humcManure[1] + romcManure[1]))
+#     transport_results[i, ] <- c(transportFomPlant + transportFomManure, transportHumPlant + transportHumManure, transportRomPlant + transportRomManure)
+#     
+#     # Increment temperatureValuePosition (if necessary)
+#     # ...
+#   }
+# }
+# 
+# # If Mode.Value == 2, co2_results, total_amount, and transport_results will contain the final results for each month
+# # If Mode.Value == 3, use co2_results, total_amount, and transport_results to create corresponding data frames or tables as needed
+# 
+# 
+# 
+# # transport vertical ----
+# 
+# inptop <- cinp[1,]
+# 
+# # topsoil
 
-# topsoil
 
-fom_top <- inptop$Cinp_plant_top
+
 
