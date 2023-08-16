@@ -1,0 +1,77 @@
+---
+title: "Addressing Inconsistencies in C-TOOL for R Coding"
+author: "FGK"
+date: "2023-08-16"
+output: ioslides_presentation
+---
+
+## Introduction
+
+![Image Descripti](coldiagram.png)
+
+In this presentation, we will discuss the identified inconsistencies in the code implementation and parameterization of our model. Resolving these inconsistencies is crucial for ensuring accurate and consistent results for future implementations.
+
+---
+
+## Temperature Function and Decomposition Rates
+
+- Issue: Discrepancies between temperature function and decomposition rates
+- Monthly averages and ranges vs. monthly averages and annual ranges
+- No difference between depths, possible problems with fixed soil temperature diffusivity index
+- Need to accurately determine the impact of temperature function on rates
+
+---
+
+## Time Step of the Model
+
+- Issue: Uncertainty about the appropriate time step
+- Model originally had flexible time step, changed to monthly
+- Discrepancy in output timescales between versions
+- Consensus needed on the correct time step (likely monthly)
+- Discussion on pertinence of Runge-Kutta integration method
+
+---
+
+## Default Parametrization on Turnover Rates
+
+- Issue: Lack of clarity on default parameter values
+- Example: Conflicting values for humification rate (kHUM)
+- Need to determine the correct value based on empirical fit (0.0336 vs 0.0192)
+- Fixed fraction of CO2 release (fCO2) inconsistency
+- Consensus needed on default parameter values
+
+---
+
+## Distribution of Carbon Inputs
+
+- Issue: Discrepancy in distributing carbon inputs
+- Different methods between documentation and code implementation
+- Annual amended C divided by 12 vs. homogeneously distributed
+- Specific implementation for Manure C inputs
+- Clarification and alignment of carbon input distribution method needed
+
+---
+
+## Other Inconsistencies
+
+- Issue: Various additional inconsistencies
+- Transport rates between pools (tF)
+- Uniform clay content in the entire profile
+- Use and distribution of amended C
+- Offset value consideration
+- Inconsistencies in outputs across different implementations
+
+---
+
+## Conclusion
+
+- Resolving inconsistencies is vital for accurate and consistent results
+- Collaboration to determine correct parameter values and methods
+- Documentation and code should be aligned for clarity
+- Continuous improvement for future model implementations
+
+---
+
+## Thank You
+
+Thank you for your attention. We are committed to addressing these coding inconsistencies and ensuring the accuracy and reliability of our model. Questions are welcome.
