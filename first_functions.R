@@ -64,7 +64,7 @@ temperature <- #function(depth, temp_m, temp_amp, month) {
 
   #angular frequency
   
-  rho <- 1.61803 * 2 / (365 * 24 * 3600)
+  rho <- 3.1415926 * 2 / (365 * 24 * 3600)
     
   dampDepth <- sqrt(2 * Th_diff / rho)
     
@@ -115,13 +115,17 @@ tcoeff_example <- cbind(tcoeff_df,
 
 
 tcoeff_example |>
-ggplot(aes(y=soil_temp, x=month, 
+ggplot(aes(y=tempCoefficient, x=temp_amp, 
            col=as.character(depth),
            )) +
   geom_point(aes(shape=as.character(depth), alpha=0.4, size=1))+
   geom_smooth(aes(group=as.character(depth)), se=FALSE) + 
-  facet_grid(~amplitude)+
+  geom_abline(slope = 1, intercept = c(0,0))+
+  #facet_grid(~amplitude)+
   theme_classic()
+
+
+cor(tcoeff_example$soil_temp, tcoeff_example$temp_m)
 
 #hist(tcoeff_example$tempCoefficient)
 
