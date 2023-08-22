@@ -45,8 +45,8 @@ lauraC_sf |> filter(!is.na(Clay)) |>
                shape=20, 
                size=2, 
                color="red", fill="red",
-               show.legend = T) +
-  facet_grid(Year~JB)
+               show.legend = T) #+
+  #facet_grid(.~JB)
   geom_line()
 
 lauraC_sf |> filter(!is.na(OrgC)) |> 
@@ -85,9 +85,9 @@ sebaC <- sebaC |>
   mutate(JB=mean(as.numeric(JB), na.rm=T)) |> 
   ungroup()
 
-sebaC |> filter(!is.na(OrgC)) |> 
+sebaC |> filter(!is.na(ClayPCT)) |> 
   mutate(Depth_cat=as.factor(Depth)) |> 
-  ggplot(aes(x=as.numeric(OrgC), y=reorder(Depth_cat, -Depth)
+  ggplot(aes(x=as.numeric(ClayPCT), y=reorder(Depth_cat, -Depth)
   ))+
   geom_point()+
   geom_boxplot()+
@@ -97,7 +97,7 @@ sebaC |> filter(!is.na(OrgC)) |>
                size=2, 
                color="red", fill="red",
                show.legend = T) +
-  facet_grid(Year~JB)+
+  facet_grid(.~JB)+
   geom_line()
 
 ### Lucas DDGD
