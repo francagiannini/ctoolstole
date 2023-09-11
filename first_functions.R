@@ -90,7 +90,7 @@ temperature <- #function(depth, temp_m, temp_amp, month) {
     
     
     data.frame("tempCoefficient" = tempCoefficient,
-               "soil_temp" = T_zt,
+               "soil_temp" = T_zt
 )
   }
 
@@ -112,24 +112,23 @@ temperature_bis <- #function(depth, temp_m, temp_amp, month) {
     # this is m2/s per second*3600*24 by defect 8e-7
    
     a <- 8e-7
-      #as.numeric(j["th_cond"]) 
+    #as.numeric(j["th_cond"]) 
     
     #osilation time in seconds 
     # here is secondly cycles (365 * 24 * 3600) 
     t_0 <-3.15e-7
     
-    
     # here yearly average temperature 
-    T_mean <- mean(j["temp_m"])
+    T_mean <- as.numeric(j["temp_m"])
     
     # here monthly daily range of temperature
-    T_0 <- t-D*sqrt(t_0/4*a*3.1415926)
+    T_xf <- t-D*sqrt(t_0/4*a*3.1415926)
     
     # Soil temperature at t days and z depth in m Montein and Unsworth 
     
     #
     T_zt_bis <-
-      T_mean + (T_0-T_ave) * exp(-D* sqrt(3.1415926*a*t_0))
+      T_mean + (T_xf-T_mean) * exp(-D* sqrt(3.1415926*a*t_0))
     
     # temp coefficient uniti at 10 C¤
     
@@ -192,21 +191,24 @@ df_temp <- expand_grid(
                  ),
   "amplitude" = c(rep("monthly",55*12), rep("complete period",55*12))),
   th_diff,
-  "depth" = c(50, 100, 200))
+  "depth" = c(50, 30,100, 200))
 
 tcoeff_example <- cbind(df_temp,
                         do.call("rbind", apply(df_temp, 1, temperature)))
 
+tcoeff_example2 <- cbind(df_temp,
+                        do.call("rbind", apply(df_temp, 1, temperature_bis)))
+
 tcoeff_example |>
 #filter(soil=="defect") |> 
-ggplot(aes(y=soil_temp_bis, #soil_temp,
+ggplot(aes(y=soil_temp, #soil_temp,
            x=month, 
            col=(depth),
            )) +
   geom_point(aes(col=depth, alpha=0.4, size=1))+
   geom_smooth(aes(group=(depth)), se=FALSE) + 
   #geom_abline(slope = 1, intercept = c(0,0))+
-  #facet_grid(soil~amplitude)+
+  facet_grid(soil~amplitude)+
   facet_grid(.~amplitude)+
   theme_classic()
 
@@ -233,11 +235,20 @@ humification <- function(clayfrac) {
   h
 }
 
-clayfrac=seq(0.01,0.6,0.01)
+clayfrac=seq(0.01,1,0.01)
 
 data.frame("h" = do.call(rbind, lapply(clayfrac, humification)),
            "clayfrac" = clayfrac) |>
   ggplot(aes(y=h, x=clayfrac)) + geom_line() + theme_classic()
+ 
+
+data.frame("h" = do.call(rbind, lapply(clayfrac, humification)),
+           "clayfrac" = clayfrac) |>
+  ggplot(aes(y=1.358-1-h, x=clayfrac)) + 
+    geom_line() + 
+    ylab("fHUM(manuere)")+
+    theme_classic()
+
 
 
 # inmovilization proportion as a function of C/N relation
