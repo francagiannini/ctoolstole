@@ -37,20 +37,26 @@ temp_measures_daily <- read.csv("FoulumDaily01012014to01012023.csv",
 
 # Monthly ----
 
-temp_monthly <- 
-  temp_measures_daily |> 
-  mutate(daily_amp = maxte-minte) |> 
-  group_by(date_month) |> 
-  summarize(temp_m = mean(temp, na.rm = T),
-            soil_t_ave_10 = mean(soilt10 , na.rm = T),
-            soil_t_ave_30 = mean(soilt30 , na.rm = T),
-            temp_amp=mean(daily_amp, na.rm = T),
-            prec=sum(prec),
-            month=month(date),
-            year=year(date)
-            ) |> unique()
+temp_monthly <-
+  temp_measures_daily |>
+  mutate(daily_amp = maxte - minte,
+         daysinmonth = lubridate::days_in_month(date)) |>
+  group_by(date_month) |>
+  summarize(
+    temp_m = mean(temp, na.rm = T),
+    soil_t_ave_10 = mean(soilt10 , na.rm = T),
+    soil_t_ave_30 = mean(soilt30 , na.rm = T),
+    temp_amp = mean(daily_amp, na.rm = T),
+    prec = sum(prec),
+    month = month(date),
+    year = year(date),
+    daysinmonth=unique(daysinmonth)
+  ) |>
+  ungroup() |>
+  unique()
 
-temp_monthly |> ggplot(aes(x=date_month,y=temp_m))+
+temp_monthly |> ggplot(
+  aes(x=date_month,y=temp_m))+
   geom_line(#aes(group=year)
               )+
   geom_point()+
@@ -102,8 +108,9 @@ temperature_MandU_monthly <- #function(depth, temp_m, temp_amp, month) {
     
     #angular frequency
     # here the cycle is daily, for secondly cycles (365 * 24 * 3600) 
+    
     rho <-
-      3.1415926 * 2/ 30 #/365
+      3.1415926 * 2/ 365 #as.numeric(j["daysinmonth"]) #30 #/
     
     # Damping depth here in m
     D <- sqrt(2 * Th_diff / rho)
@@ -159,8 +166,8 @@ scatter_MandU <-
 # orca(scatter_MandU, "interactive_plot_temp_fou.html")
 
   tmp_example_MandU |>
-  filter(depth==c(30) & soil =="defect") |> 
-  ggplot(aes(y=soil_t_ave_30, #soil_temp,
+  filter(depth==c(10) & soil =="defect") |> 
+  ggplot(aes(y=soil_t_ave_10, #soil_temp,
              x=soil_temp, 
              col=as.character(month)#,
   )) +
