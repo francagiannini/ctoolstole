@@ -88,7 +88,7 @@ df_temp <- expand_grid(
 
 temperature_MandU_monthly <- #function(depth, temp_m, temp_amp, month) {
   function(j) {
-    #browser()
+    browser()
     # depth in meters#
     z = as.numeric(j["depth"]) / 2 * 0.01 
     
@@ -104,17 +104,19 @@ temperature_MandU_monthly <- #function(depth, temp_m, temp_amp, month) {
     # this is m2/day 0.35e-6 if m2/s per second*3600*24
     
     Th_diff <-
-      as.numeric(j["th_diff"])/30 
+      as.numeric(j["th_diff"])#/30 
     
     #angular frequency
     # here the cycle is daily, for secondly cycles (365 * 24 * 3600) 
     
     rho <-
-      3.1415926 * 2/ 365 #as.numeric(j["daysinmonth"]) #30 #/
+      pi * 2/ 365 #as.numeric(j["daysinmonth"]) #/30#
+    
+    
     
     # Damping depth here in m
-    D <- sqrt(2 * Th_diff / rho)
-    
+    D <- sqrt(2* Th_diff / rho)
+ 
     # here monthly daily average temperature 
     T_ave <- as.numeric(j["temp_m"])
     
@@ -140,23 +142,25 @@ tmp_example_MandU <- cbind(df_temp,
                         do.call("rbind", 
                                 apply(df_temp, 1, temperature_MandU_monthly)))
 
-scatter_MandU <- 
+#scatter_MandU <- 
   tmp_example_MandU |>
-  filter(depth %in% c("30","10")& soil %in% c("defect","JB 4")) |> 
+  filter(depth %in% c("30","10")& soil %in% c("defect")) |> 
   ggplot(aes(y=soil_temp, #soil_temp,
              x=month, 
              col=as.factor(depth)#,
   )) +
-  #geom_point(aes(col=depth))+
+  geom_point(aes(col=as.character(depth)))+
+  #geom_line(aes(col=as.character(depth)))+
   geom_point(aes(y=soil_t_ave_10), color="#F8766D", shape="0")+
-  geom_point(aes(y=soil_t_ave_30), color="#00BFC4")+
-  geom_point(aes(y=temp_m), color="black", show.legend = TRUE,
-             shape="3")+
-  geom_smooth(aes(group=interaction(depth,soil), linetype=soil), alpha=0.2) + 
-  #geom_abline(slope = 1, intercept = c(0,0))+
-  #facet_grid(soil~amplitude)+
-  #facet_grid(.~amplitude)+
-  scale_x_continuous(breaks = seq(1,12,1))
+  geom_point(aes(y=soil_t_ave_30), color="#00BFC4", shape="0")+
+  # geom_point(aes(y=temp_m), color="black", show.legend = TRUE,
+  #            shape="3")+
+   geom_smooth()#+
+  # #geom_smooth(aes(group=interaction(depth,soil), linetype=soil), alpha=0.2) + 
+  # #geom_abline(slope = 1, intercept = c(0,0))+
+  # #facet_grid(soil~amplitude)+
+  # #facet_grid(.~amplitude)+
+  # scale_x_continuous(breaks = seq(1,12,1))
 
 #intervative_scatter <- 
   ggplotly(scatter_MandU)
@@ -178,6 +182,8 @@ scatter_MandU <-
   labs(x="observed", y="predicted")
   #facet_grid(soil~amplitude)+
   #facet_grid(.~amplitude)+
+  
+  
   
   # Daily ----
 
