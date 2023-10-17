@@ -1,15 +1,13 @@
-
+library(rCTOOL)
 
 # Starting soil conditions and rates constants in time ----
 
-extraCarbon <-  soil_df$`Amended C_soilInit` / 12
-#CNfraction <- soil_df$`C/N_soilInit`
+#extraCarbon <-  soil_df$`Amended C_soilInit` / 12
 
 Cproptop <- 0.47
 
 startCAmount_top <- soil_df$`Initial C(t/ha)_soilInit` * Cproptop
 startCAmount_sub <- soil_df$`Initial C(t/ha)_soilInit` * (1-Cproptop)
-
 
 init_pool_top <-pool_cn(cn=soil_df$`C/N_soilInit`,
                          HUM_frac = soil_df$PupperLayer_soilInit,
@@ -22,11 +20,47 @@ init_pool_sub <-pool_cn(cn=soil_df$`C/N_soilInit`,
 # General turnover flow ----
 # plantinputs
 
-Cinp_plant_top <- cinp$Cinp_plant_top[i]
-# mnure 
-fom_add_predecomp_top <- cinp$Cinp_Cmanure[i] - fHUM*cinp$Cinp_Cmanure[i]
+y=1 #year, 
+m=4 #month 
 
-hum_add <- fHUM*cinp$Cinp_plant_top[i]
+month_prop=c(0,0,0,8,12,16,64,0,0,0,0,0)/100
+#month_prop=c(1,1,2,7,12,15,17,16,14,9,5,1)/100 # perennial from Henri
+#month_prop=c(5,10,10,0,0,0,0,10,20,20,15,10) # cc other 
+
+month_man=c(0,0,100,0,0,0,0,0,0,0,0,0)/100
+#month_man=c(0,10,25,50,10,5,0,0,0,0,0,0)/100 #bare soil
+#month_man=c(0,0,25,0,0,50,0,0,0,25,0,0)/100 #cc #perennial
+
+Cinp_plant_top <- cinp$Cinp_plant_top[y]*month_prop[m]
+
+Cinp_plant_sub <- cinp$Cinp_plant_sub[y]*month_prop[m]
+
+# manure 
+fHUM_man_rate=soil_df$HumFraction_manure #0.192  feaces # 0.63 #digested feaces #0.39 #digested feed
+
+hum_man_inp <- fHUM_man*cinp$Cinp_Cmanure[y]*month_man[m]
+
+fom_man_inp <- cinp$Cinp_Cmanure[y]*month_man[m] - hum_man_inp
+
+t_coef <- temp_coef(T_zt = soil_temp(depth= 0.25/2,
+                                        month=j,
+                                        T_ave= temperatures[y-1+m,],
+                                        A_0= 25.09995,
+                                        th_diff=0.035))
+
+
+#
+FOM_0=0
+
+FOM=0+#ifelse(y=1 %&% m=1,init_pool_top["FOM"], FOM_0)+
+  Cinp_plant_top-decay(amount_t=Cinp_plant_top,
+                               k=soil_df$FOMdecompositionrate_crop,
+                               tempCoefficient = t_coef
+                               )+
+  fom_man_inp
+
+FOM=init_pool_top["HUM"]+Cinp_plant_top+hum_man_inp
+
 
 #kFOM should be affected by temp 
 
