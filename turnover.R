@@ -1,4 +1,46 @@
 library(rCTOOL)
+library(tidyverse)
+
+# I. Inputs ----
+
+## Temperature ----
+temperatures <- read.table("InputFiles/temp55years.txt")
+colnames(temperatures) <- c("temp_m")
+
+head(temperatures)
+
+temp_minmax <- read.table("InputFiles/temp_ranges_foulum.txt", header = T) |> 
+  mutate(temp_amp =max-min) 
+
+## Soil ----
+soil <- as.data.frame(readLines("InputFiles/input.txt"))
+colnames(soil) <- c("vect")
+
+paramtype <- c(rep("soilInit",9),
+               rep("crop",10),
+               rep("manure",11),
+               rep("C14_crop",11),
+               rep("C14_manure",12),
+               rep("fom", 6))
+
+soil_df <- soil |> 
+  separate(vect, sep = "\t", into = c("soilparam","value")) |> 
+  dplyr::mutate(soilparam = paste(soilparam, paramtype, sep="_")) |> 
+  pivot_wider(names_from = "soilparam", 
+              values_from = "value") |>   
+  dplyr::select(!starts_with("[") & where(~!any(is.na(.)))) |> 
+  dplyr::select(where(~!any(is.na(.)))) |> 
+  mutate_if(is.character, as.numeric)
+
+
+## C inputs ----
+
+cinp <- read.table("InputFiles/data.txt", sep = "\t", header= TRUE)
+
+colnames(cinp) <-c("year",
+                   "Cinp_plant_top","Cinp_plant_sub",
+                   "Cinp_Cmanure", "C14plant","C14manure")
+
 
 # Starting soil conditions and rates constants in time ----
 
