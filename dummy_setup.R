@@ -33,7 +33,6 @@ fco2 <- 0.628
 
 fromi <- 0.012
 
-
 month_prop <- c(0,0,0,8,12,16,64,0,0,0,0,0)/100
 
 month_man <- c(0,0,100,0,0,0,0,0,0,0,0,0)/100
@@ -65,6 +64,7 @@ fROM_sub <- 0.6847
 CN <- 10
 
 # time 0
+# initial_values
 
 startCAmount_top <- Cinit * Cproptop
 startCAmount_sub <- Cinit * (1-Cproptop)
@@ -72,24 +72,48 @@ startCAmount_sub <- Cinit * (1-Cproptop)
 init_pool_top <-pool_cn(cn=CN,
                         HUM_frac = fHUM_top,
                         ROM_frac = fROM_top,
-                        C_0=startCAmount_top)
+                        C_0=startCAmount_top)|> t()
+
+colnames(init_pool_top) <- paste(colnames(init_pool_top), "top", sep = "_")
 
 init_pool_sub <-pool_cn(cn=CN,
                         HUM_frac = fHUM_sub,
                         ROM_frac = fROM_sub,
-                        C_0=startCAmount_sub)
+                        C_0=startCAmount_sub) |> t()
 
+colnames(init_pool_sub)<-paste(colnames(init_pool_sub),"sub",sep="_")
+
+initial_value <-
+  cbind(
+    "step" = 1,
+    "yr" = y[1],
+    "mth" = 1,
+    init_pool_top,
+    init_pool_sub
+  )
 
 # time period
 y=seq(1,5,1) 
 m=seq(1,12,1)
 
-#turnover <- function(m,y) {
+result_pools <- data.frame(matrix(ncol = ncol(initial_value), nrow = 0))
+colnames(result_pools) <- colnames(initial_value)
+
+result_pools[1,] <- initial_value
+
+turnover <- function(i) {
+
+#browser()
+  
+m=as.numeric(result_pools["mth"])+1
+
+y=as.numeric(result_pools["yr"])
 
 # FOM topsoil ----
 
 FOM_top <-
-  ifelse(y == 1 & m == 1, init_pool_top["FOM"], FOM_top) +
+  result_pools['FOM_top']+
+  #ifelse(y == 1 & m == 1, init_pool_top["FOM"], FOM_top[i-1]) +
   C_input_top[y] * month_prop[m] +
   C_input_man[y] * (1 - fman) * month_man[m]
 
@@ -122,7 +146,8 @@ FOM_top <- FOM_top-FOM_humified_top-CO2_FOM_top-FOM_tr
 # FOM subsoil ----
 
 FOM_sub <-
-  ifelse(y == 1 & m == 1, init_pool_sub["FOM"], FOM_sub) +
+  result_pools['FOM_sub']+
+  #ifelse(y == 1 & m == 1, init_pool_sub["FOM"], FOM_sub) +
   FOM_tr +
   C_input_sub[y] * month_prop[m]
 
@@ -153,7 +178,8 @@ FOM_sub <- FOM_sub-FOM_humified_sub-CO2_FOM_sub
 # HUM topsoil ----
 
 HUM_top <-
-  ifelse(y == 1 & m == 1, init_pool_top["HUM"], HUM_top) +
+  result_pools['HUM_top']+
+  #ifelse(y == 1 & m == 1, init_pool_top["HUM"], HUM_top) +
   C_input_man[y] * fman * month_man[m]+
   FOM_humified_top
 
@@ -186,7 +212,8 @@ HUM_top <- HUM_top-HUM_romified_top-CO2_HUM_top-HUM_tr
 # HUM subsoil ----
 
 HUM_sub <-
-  ifelse(y == 1 & m == 1, init_pool_sub["HUM"], HUM_sub) +
+  result_pools['HUM_sub']+
+  #ifelse(y == 1 & m == 1, init_pool_sub["HUM"], HUM_sub) +
   HUM_tr+
   FOM_humified_sub
 
@@ -218,7 +245,8 @@ HUM_sub <- HUM_sub-HUM_romified_sub-CO2_HUM_sub
 # ROM topsoil ----
 
 ROM_top <-
-  ifelse(y == 1 & m == 1, init_pool_top["ROM"], ROM_top)+
+  result_pools['ROM_top']+
+  #ifelse(y == 1 & m == 1, init_pool_top["ROM"], ROM_top)+
   HUM_romified_top
 
 ROM_after_decomp_top <-
@@ -253,7 +281,8 @@ ROM_top <- ROM_top-ROM_tr-CO2_ROM_top
 # ROM subsoil ----
 
 ROM_sub <-
-  ifelse(y == 1 & m == 1, init_pool_sub["HUM"], ROM_sub) +
+  result_pools['ROM_sub']+
+  #ifelse(y == 1 & m == 1, init_pool_sub["HUM"], ROM_sub) +
   ROM_tr+
   HUM_romified_sub
   
@@ -280,39 +309,85 @@ CO2_ROM_sub <-
 
 ROM_sub <- ROM_sub-CO2_ROM_sub
 
-cbind(
-  'yr' = y,
-  'mth' = m,
-  
-  'FOM_top' = FOM_top,
-  'HUM_top' = HUM_top,
-  'ROM_top' = ROM_top,
-  
-  'FOM_sub' = FOM_sub,
-  'HUM_sub' = HUM_sub,
-  'ROM_sub' = ROM_sub,
-  
-  'C_topsoil' = FOM_top + HUM_top + ROM_top,
-  'C_subsoil' = FOM_sub + HUM_sub + ROM_sub,
-  
-  "FOM_tr" = FOM_tr,
-  "HUM_tr" = HUM_tr,
-  "ROM_tr" = ROM_tr,
-  
-  'C_tr'= FOM_tr+HUM_tr+ROM_tr,
-  
-  "CO2_FOM_top" = CO2_FOM_top,
-  "CO2_HUM_top" = CO2_HUM_top,
-  "CO2_ROM_top" = CO2_ROM_top,
-  
-  "CO2_FOM_sub" = CO2_FOM_sub,
-  "CO2_HUM_sub" = CO2_HUM_sub,
-  "CO2_ROM_sub" = CO2_ROM_sub,
-  
-  'C_CO2_top'= CO2_FOM_top+CO2_HUM_top+CO2_ROM_top,
-  'C_CO2_sub'= CO2_FOM_sub+CO2_HUM_sub+CO2_ROM_sub
-  
-)
+result_pools <-
+  cbind(
+    'step' = result_pools['step']+1,
+    'yr' = ifelse(m == 1, y + 1, y),
+    'mth' = ifelse(m + 1 > 12, 1, m),
+    
+    'FOM_top' = FOM_top,
+    'HUM_top' = HUM_top,
+    'ROM_top' = ROM_top,
+    
+    'FOM_sub' = FOM_sub,
+    'HUM_sub' = HUM_sub,
+    'ROM_sub' = ROM_sub
+  )
 
+return(result_pools)
+
+# output <-
+#   cbind(
+#     'yr' = y,
+#     'mth' = m,
+#     
+#     'FOM_top' = FOM_top,
+#     'HUM_top' = HUM_top,
+#     'ROM_top' = ROM_top,
+#     
+#     'FOM_sub' = FOM_sub,
+#     'HUM_sub' = HUM_sub,
+#     'ROM_sub' = ROM_sub,
+#     
+#     'C_topsoil' = FOM_top + HUM_top + ROM_top,
+#     'C_subsoil' = FOM_sub + HUM_sub + ROM_sub,
+#     
+#     "FOM_tr" = FOM_tr,
+#     "HUM_tr" = HUM_tr,
+#     "ROM_tr" = ROM_tr,
+#     
+#     'C_tr' = FOM_tr + HUM_tr + ROM_tr,
+#     
+#     "CO2_FOM_top" = CO2_FOM_top,
+#     "CO2_HUM_top" = CO2_HUM_top,
+#     "CO2_ROM_top" = CO2_ROM_top,
+#     
+#     "CO2_FOM_sub" = CO2_FOM_sub,
+#     "CO2_HUM_sub" = CO2_HUM_sub,
+#     "CO2_ROM_sub" = CO2_ROM_sub,
+#     
+#     'C_CO2_top' = CO2_FOM_top + CO2_HUM_top + CO2_ROM_top,
+#     'C_CO2_sub' = CO2_FOM_sub + CO2_HUM_sub + CO2_ROM_sub
+#     
+#   )
+# 
+# return(output)
+
+                  }
+
+#rbind(initial_value,turnover(i=result_pool[i-1]))
+
+##
+
+
+
+result_pools[1,] <- initial_value
+
+iterateFunction <- function(initial_value, num_steps) {
+  
+result_pools <- data.frame(matrix(ncol = ncol(initial_value), nrow = 0))
+colnames(result_pools) <- colnames(initial_value)
+
+  # Store initial value in the first position
+result_pools[1,] <- initial_value
+  
+  # Use sapply to calculate and store results without a for loop
+  result_pool <-
+    rbind(initial_value, apply(2:num_steps,1 ,turnover(i = result_pool[i - 1])))
+  
+  return(result_pools)
 }
-res
+
+try <- iterateFunction(initial_value, num_steps)
+
+
