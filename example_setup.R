@@ -100,7 +100,7 @@ kHUM <- soil_df$HUMdecompositionrate_crop
 kROM <- soil_df$ROMdecompositionrate_crop
 
 # transport rate
-ftr <- soil_df$tF_crop
+ftr <- 0#soil_df$tF_crop
 
 # initial pool distribution
 fHUM_top <- soil_df$PupperLayer_soilInit
@@ -172,259 +172,6 @@ nsteps <- as.list(seq(1, length(y) * length(m), 1))
 
 # Turnover core function -----
 
-# i refers to the time step 
-
-turnover <- function(i) {
-  
-  result_pools <- result_pools[i - 1, ]
-  result_pools <- as.data.frame(t(result_pools))
-  
-  #browser()
-  
-  m = ifelse(as.numeric(result_pools[, "mth"]) < 12, 
-             as.numeric(result_pools[, "mth"]) + 1,
-             1)
-  y = as.numeric(result_pools[, "yr"])
-  
-  # FOM topsoil ----
-  
-  FOM_top <-
-    result_pools[, "FOM_top"] +
-    C_input_top[y] * month_prop[m] +
-    C_input_man[y] * (1 - fman) * month_man[m]
-  
-  FOM_after_decomp_top <- FOM_top +
-    decay(
-      C0_t = FOM_top,
-      k = kFOM,
-      tempCoefficient = temp_coef(
-        T_zt =
-          soil_temp(
-            depth = 25,
-            month = m,
-            T_ave = T_ave[y - 1 + m],
-            A_0 = T_range[y - 1 + m],
-            th_diff = phi
-          )
-      )
-    )
-  
-  substrate_FOM_decomp_top <- FOM_top - FOM_after_decomp_top
-  
-  FOM_humified_top <-
-    substrate_FOM_decomp_top * hum_coef(clayfrac = clay_top)
-  
-  CO2_FOM_top <-
-    substrate_FOM_decomp_top * (1 - hum_coef(clayfrac = clay_top))
-  
-  FOM_tr <- FOM_after_decomp_top * ftr
-  
-  FOM_top <- FOM_top - FOM_humified_top - CO2_FOM_top - FOM_tr
-  
-  # FOM subsoil ----
-  
-  FOM_sub <-
-    result_pools[, "FOM_sub"] +
-    FOM_tr +
-    C_input_sub[y] * month_prop[m]
-  
-  FOM_after_decomp_sub <-
-    FOM_sub +
-    decay(
-      C0_t = FOM_sub,
-      k = kFOM,
-      tempCoefficient =  temp_coef(
-        T_zt = soil_temp(
-          depth = 100,
-          month = m,
-          T_ave = T_ave[y - 1 + m],
-          A_0 = T_range[y - 1 + m],
-          th_diff = phi
-        )
-      )
-    )
-  
-  substrate_FOM_decomp_sub <- FOM_sub - FOM_after_decomp_sub
-  
-  FOM_humified_sub <-
-    substrate_FOM_decomp_sub * hum_coef(clayfrac = clay_sub)
-  
-  CO2_FOM_sub <-
-    substrate_FOM_decomp_sub * (1 - hum_coef(clayfrac = clay_sub))
-  
-  FOM_sub <- FOM_sub - FOM_humified_sub - CO2_FOM_sub
-  
-  # HUM topsoil ----
-  
-  HUM_top <-
-    result_pools[, "HUM_top"] +
-    C_input_man[y] * fman * month_man[m] +
-    FOM_humified_top
-  
-  HUM_after_decomp_top <-
-    HUM_top +
-    decay(
-      C0_t = HUM_top,
-      k = kHUM,
-      tempCoefficient = temp_coef(
-        T_zt = soil_temp(
-          depth = 25,
-          month = m,
-          T_ave = T_ave[y - 1 + m],
-          A_0 = T_range[y - 1 + m],
-          th_diff = phi
-        )
-      )
-    )
-  
-  substrate_HUM_decomp_top <- HUM_top - HUM_after_decomp_top
-  
-  HUM_romified_top <- substrate_HUM_decomp_top * fromi
-  
-  CO2_HUM_top <- substrate_HUM_decomp_top * (1 - fromi) #fco2
-  
-  HUM_tr <- HUM_after_decomp_top * ftr
-  
-  HUM_top <- HUM_top - HUM_romified_top - CO2_HUM_top - HUM_tr
-  
-  # HUM subsoil ----
-  
-  HUM_sub <-
-    result_pools[, "HUM_sub"] +
-    HUM_tr +
-    FOM_humified_sub
-  
-  HUM_after_decomp_sub <-
-    HUM_sub +
-    decay(
-      C0_t = HUM_sub,
-      k = kHUM,
-      tempCoefficient = temp_coef(
-        T_zt = soil_temp(
-          depth = 100,
-          month = m,
-          T_ave = T_ave[y - 1 + m],
-          A_0 = T_range[y - 1 + m],
-          th_diff = phi
-        )
-      )
-    )
-  
-  substrate_HUM_decomp_sub <- HUM_sub - HUM_after_decomp_sub
-  
-  HUM_romified_sub <- substrate_HUM_decomp_sub * fromi
-  
-  CO2_HUM_sub <-
-    substrate_HUM_decomp_top * (1 - fromi) #fco2
-  
-  HUM_sub <- HUM_sub - HUM_romified_sub - CO2_HUM_sub
-  
-  # ROM topsoil ----
-  
-  ROM_top <-
-    result_pools[, "ROM_top"] +
-    #ifelse(y == 1 & m == 1, init_pool_top["ROM"], ROM_top)+
-    HUM_romified_top
-  
-  ROM_after_decomp_top <-
-    ROM_top +
-    decay(
-      C0_t = ROM_top,
-      k = kROM,
-      tempCoefficient =  temp_coef(
-        T_zt = soil_temp(
-          depth = 25,
-          month = m,
-          T_ave = T_ave[y - 1 + m],
-          A_0 = T_range[y - 1 + m],
-          th_diff = phi
-        )
-      )
-    )
-  
-  substrate_ROM_decomp_top <- ROM_top - ROM_after_decomp_top
-  
-  CO2_ROM_top <-
-    substrate_ROM_decomp_top * fco2
-  
-  # ROM_not_respirated <-
-  #   substrate_ROM_decomp_top*(1-fco2)
-  
-  ROM_tr <-
-    ROM_after_decomp_top * ftr
-  
-  ROM_top <- ROM_top - ROM_tr - CO2_ROM_top
-  
-  # ROM subsoil ----
-  
-  ROM_sub <-
-    result_pools[, "ROM_sub"] +
-    #ifelse(y == 1 & m == 1, init_pool_sub["HUM"], ROM_sub) +
-    ROM_tr +
-    HUM_romified_sub
-  
-  ROM_after_decomp_sub <-
-    ROM_sub +
-    decay(
-      C0_t = ROM_sub,
-      k = kHUM,
-      tempCoefficient =  temp_coef(
-        T_zt = soil_temp(
-          depth = 100,
-          month = m,
-          T_ave = T_ave[y - 1 + m],
-          A_0 = T_range[y - 1 + m],
-          th_diff = phi
-        )
-      )
-    )
-  
-  substrate_ROM_decomp_sub <- ROM_sub - ROM_after_decomp_sub
-  
-  CO2_ROM_sub <-
-    substrate_ROM_decomp_top * fco2
-  
-  ROM_sub <- ROM_sub - CO2_ROM_sub
-  
-  result_pools <-
-    cbind(
-      
-      "step" = result_pools[, "step"] + 1,
-      "yr" = ifelse(m + 1 > 13, y + 1, y),
-      "mth" = ifelse(m + 1 > 13, 1, m),
-      
-      "FOM_top" = FOM_top,
-      "HUM_top" = HUM_top,
-      "ROM_top" = ROM_top,
-      
-      "FOM_sub" = FOM_sub,
-      "HUM_sub" = HUM_sub,
-      "ROM_sub" = ROM_sub,
-      
-      "C_topsoil" = FOM_top + HUM_top + ROM_top,
-      "C_subsoil" = FOM_sub + HUM_sub + ROM_sub,
-      
-      "FOM_tr" = FOM_tr,
-      "HUM_tr" = HUM_tr,
-      "ROM_tr" = ROM_tr,
-      
-      "C_tr" = FOM_tr + HUM_tr + ROM_tr,
-      
-      "CO2_FOM_top" = CO2_FOM_top,
-      "CO2_HUM_top" = CO2_HUM_top,
-      "CO2_ROM_top" = CO2_ROM_top,
-      
-      "CO2_FOM_sub" = CO2_FOM_sub,
-      "CO2_HUM_sub" = CO2_HUM_sub,
-      "CO2_ROM_sub" = CO2_ROM_sub,
-      
-      "C_CO2_top" = CO2_FOM_top + CO2_HUM_top + CO2_ROM_top,
-      "C_CO2_sub" = CO2_FOM_sub + CO2_HUM_sub + CO2_ROM_sub
-    )
-  
-  return(result_pools)
-}
-
 ## faster ----
 
 #iterateFunc <- function(nsteps, initial_value) {
@@ -466,10 +213,12 @@ theme_update(panel.grid = element_blank())
 
 result_pools |> 
   as.data.frame() |> 
-  pivot_longer(cols = c(C_subsoil,C_topsoil), 
-               names_to = "depth",values_to = "SOC" )|>
+  pivot_longer(
+    cols = c(C_subsoil,C_topsoil), 
+    names_to = "depth",
+    values_to = "SOC" )|>
   ggplot(aes(x=step,y=SOC,fill=depth))+
-  geom_col()
+  geom_col(position = "stack")
 
 out_mauro_sa <- 
   read.table("C:/Users/au710823/OneDrive - Aarhus universitet/ctool1st2022/ctool_mauro_2023/outputFiles/totalAmount.txt", header = T)|> 
@@ -485,4 +234,4 @@ out_mauro_sa |>
   values_to = "SOC"
 ) |>
   ggplot(aes(x = id, y = SOC, fill = depth)) +
-  geom_col()
+  geom_col(position = "stack")
