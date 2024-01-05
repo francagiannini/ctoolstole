@@ -4,35 +4,58 @@ library(rCTOOL)
 
 library(tidyverse)
 
-# Dummy scenario 5 years----
+# Example scenario 55 years coming from Klimagræs----
 
 ## Input setup ----
 
 ### Temperature ----- 
 # We set an scenario for the average condition of historical Foulum registers 
+
 temperatures <- read.table("InputFiles/temp55years.txt")
 colnames(temperatures) <- c("temp_m")
+
 head(temperatures)
 
 temp_minmax <- read.table("InputFiles/temp_ranges_foulum.txt", header = T) |> 
-  mutate(temp_amp =max-min)
+  mutate(temp_amp =max-min) 
 
-temperatures <- temperatures |> mutate(month=rep(seq(1,12,1),55)) |> 
-  group_by(month) |> 
-  summarize(monthly_mean=mean(temp_m))
+T_ave <- temperatures$temp_m
 
-T_ave <- rep(temperatures$monthly_mean,5)
-
-T_range <- rep(temp_minmax$temp_amp, 5)
+T_range <- rep(temp_minmax$temp_amp, 55)
 
 ### Carbon inputs ----
-# Simple set up of a yearly C inputs
+# Simple yearly C inputs
+cinp <- read.table("InputFiles/data.txt", sep = "\t", header= TRUE)
 
-C_input_top <- rep(1,5)
+colnames(cinp) <-c("year",
+                   "Cinp_plant_top","Cinp_plant_sub",
+                   "Cinp_Cmanure", "C14plant","C14manure")
 
-C_input_sub <- rep(0.1,5)
+C_input_top <- cinp$Cinp_plant_top
 
-C_input_man <- rep(0.2,5)
+C_input_sub <- cinp$Cinp_plant_sub
+
+C_input_man <- cinp$Cinp_Cmanure
+
+## Soil ----
+soil <- as.data.frame(readLines("InputFiles/input.txt"))
+colnames(soil) <- c("vect")
+
+paramtype <- c(rep("soilInit",9),
+               rep("crop",10),
+               rep("manure",11),
+               rep("C14_crop",11),
+               rep("C14_manure",12),
+               rep("fom", 6))
+
+soil_df <- soil |> 
+  separate(vect, sep = "\t", into = c("soilparam","value")) |> 
+  dplyr::mutate(soilparam = paste(soilparam, paramtype, sep="_")) |> 
+  pivot_wider(names_from = "soilparam", 
+              values_from = "value") |>   
+  dplyr::select(!starts_with("[") & where(~!any(is.na(.)))) |> 
+  dplyr::select(where(~!any(is.na(.)))) |> 
+  mutate_if(is.character, as.numeric)
 
 # Monthly distribution of C inputs taken from previous version 
 # assuming that C inputs comes from grain crops 
@@ -44,21 +67,21 @@ month_man <- c(0,0,100,0,0,0,0,0,0,0,0,0)/100
 
 # Fraction of manure that we consider is already Humidified
 
-fman <- 0.192
+fman <- soil_df$HumFraction_manure
 
 ### Soil ----
 #Parameters referring to site-specific soil conditions 
 
 # Initial C stock at 1m depth 
-Cinit <- 100
+Cinit <- soil_df$`Initial C(t/ha)_soilInit`
 
 # Proportion of the total C allocated in topsoil
 
 Cproptop <- 0.47
 
-clay_top <- 0.1
+clay_top <- soil_df$clayfraction_crop
 
-clay_sub <- 0.15
+clay_sub <- soil_df$clayfraction_crop
 
 # Diffusion index 
 phi <- 0.035
@@ -70,26 +93,26 @@ fco2 <- 0.628
 fromi <- 0.012
 
 # decomposition rates 
-kFOM <- 0.12
+kFOM <- soil_df$FOMdecompositionrate_crop
 
-kHUM <- 0.0028
+kHUM <- soil_df$HUMdecompositionrate_crop
 
-kROM <- 3.858e-05
+kROM <- soil_df$ROMdecompositionrate_crop
 
 # transport rate
-ftr <- 0.003
+ftr <- soil_df$tF_crop
 
 # initial pool distribution
-fHUM_top <- 0.4803
+fHUM_top <- soil_df$PupperLayer_soilInit
 
-fROM_top <- 0.4881 
+fROM_top <- 1-soil_df$FOMfractionPlantTopLayer_fom-fHUM_top
 
-fHUM_sub <- 0.3123
+fHUM_sub <- soil_df$PLoweLayer_soilInit
 
-fROM_sub <- 0.6847 
+fROM_sub <- 1-soil_df$FOMfractionPlantLowerLayer_fom-fHUM_sub 
 
 # CN relation
-CN <- 10
+CN <- soil_df$`C/N_soilInit`
 
 ## Pre-Processing for time 0 ----
 # initial_values
@@ -112,8 +135,7 @@ init_pool_sub <-pool_cn(cn=CN,
 colnames(init_pool_sub)<-paste(colnames(init_pool_sub),"sub",sep="_")
 
 # time period 
-
-y=seq(1,5,1) 
+y=seq(1,length(C_input_top),1) 
 m=seq(1,12,1)
 # 
 initial_value <-
@@ -125,21 +147,21 @@ initial_value <-
     init_pool_sub,
     "C_topsoil" = NA,
     "C_subsoil" = NA,
-      
+    
     "FOM_tr" = NA,
     "HUM_tr" = NA,
     "ROM_tr" = NA,
-      
+    
     "C_tr" = NA,
-      
+    
     "CO2_FOM_top" = NA,
     "CO2_HUM_top" = NA,
     "CO2_ROM_top" = NA,
-      
+    
     "CO2_FOM_sub" = NA,
     "CO2_HUM_sub" = NA,
     "CO2_ROM_sub" = NA,
-      
+    
     "C_CO2_top" = NA,
     "C_CO2_sub" = NA
   )
@@ -434,9 +456,10 @@ SOC_stock <- result_pools[length(nsteps),"C_topsoil"] +
 
 emited <-sum(result_pools[,"C_CO2_top"],na.rm = TRUE) +
   sum(result_pools[,"C_CO2_sub"],na.rm = TRUE)
-                
 
-as.numeric((Cinit+input)) == as.numeric((SOC_stock+emited))
+transp <- sum(result_pools[,"C_tr"],na.rm = TRUE)
+
+as.numeric((Cinit+input))-as.numeric((SOC_stock+emited))
 
 theme_set(theme_bw())
 theme_update(panel.grid = element_blank())
@@ -448,3 +471,18 @@ result_pools |>
   ggplot(aes(x=step,y=SOC,fill=depth))+
   geom_col()
 
+out_mauro_sa <- 
+  read.table("C:/Users/au710823/OneDrive - Aarhus universitet/ctool1st2022/ctool_mauro_2023/outputFiles/totalAmount.txt", header = T)|> 
+  #select(c("total.1.1.","total.2.1.")) |> 
+  mutate(id=seq(1,55*12,1)) |> 
+  rename(CTop="total.1.1." ,
+         CSub="total.2.1.")
+
+out_mauro_sa |> 
+  pivot_longer(
+  cols = c(CSub, CTop),
+  names_to = "depth",
+  values_to = "SOC"
+) |>
+  ggplot(aes(x = id, y = SOC, fill = depth)) +
+  geom_col()
