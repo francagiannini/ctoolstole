@@ -47,15 +47,12 @@ turnover <- function(i) {
   CO2_FOM_top <-
     substrate_FOM_decomp_top * (1 - hum_coef(clayfrac = clay_top))
   
-  FOM_tr <- FOM_after_decomp_top * ftr
-  
-  FOM_top <- FOM_top - FOM_humified_top - CO2_FOM_top - FOM_tr
+  FOM_top <- FOM_top - FOM_humified_top - CO2_FOM_top
   
   # FOM subsoil ----
   
   FOM_sub <-
     result_pools[, "FOM_sub"] +
-    FOM_tr +
     C_input_sub[y] * month_prop[m]
   
   FOM_after_decomp_sub <-
@@ -109,11 +106,11 @@ turnover <- function(i) {
   
   substrate_HUM_decomp_top <- HUM_top - HUM_after_decomp_top
   
-  HUM_romified_top <- substrate_HUM_decomp_top * (fromi+fco2)
+  HUM_romified_top <- substrate_HUM_decomp_top * fromi
   
-  CO2_HUM_top <- substrate_HUM_decomp_top * (1 - fromi-fco2) #
+  CO2_HUM_top <- substrate_HUM_decomp_top * fco2 
   
-  HUM_tr <- HUM_after_decomp_top * ftr
+  HUM_tr <- substrate_HUM_decomp_top * (1-fromi-fco2)
   
   HUM_top <- HUM_top - HUM_romified_top - CO2_HUM_top - HUM_tr
   
@@ -142,10 +139,10 @@ turnover <- function(i) {
   
   substrate_HUM_decomp_sub <- HUM_sub - HUM_after_decomp_sub
   
-  HUM_romified_sub <- substrate_HUM_decomp_sub * (fromi+fco2)
+  HUM_romified_sub <- substrate_HUM_decomp_sub * fromi
   
   CO2_HUM_sub <-
-    substrate_HUM_decomp_top * (1 - (fromi+fco2)) #
+    substrate_HUM_decomp_sub * fco2
   
   HUM_sub <- HUM_sub - HUM_romified_sub - CO2_HUM_sub
   
@@ -180,7 +177,7 @@ turnover <- function(i) {
   #   substrate_ROM_decomp_top*(1-fco2)
   
   ROM_tr <-
-    ROM_after_decomp_top * ftr
+    substrate_ROM_decomp_top * ftr
   
   ROM_top <- ROM_top - ROM_tr - CO2_ROM_top
   
@@ -232,11 +229,11 @@ turnover <- function(i) {
       "C_topsoil" = FOM_top + HUM_top + ROM_top,
       "C_subsoil" = FOM_sub + HUM_sub + ROM_sub,
       
-      "FOM_tr" = FOM_tr,
+      "FOM_tr" = NA,
       "HUM_tr" = HUM_tr,
       "ROM_tr" = ROM_tr,
       
-      "C_tr" = FOM_tr + HUM_tr + ROM_tr,
+      "C_tr" =  HUM_tr + ROM_tr,
       
       "CO2_FOM_top" = CO2_FOM_top,
       "CO2_HUM_top" = CO2_HUM_top,
