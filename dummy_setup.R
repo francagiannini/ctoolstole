@@ -172,6 +172,9 @@ system.time(
 # }
 #tired <- iterateFunc(nsteps, initial_value)
 
+
+## Exploring results----
+
 input <- 
   sum(C_input_top)+sum(C_input_sub)+sum(C_input_man)
 
@@ -195,3 +198,22 @@ result_pools |>
   ggplot(aes(x=step,y=SOC,fill=depth))+
   geom_col()
 
+pool_cols=values = c(FOM_top="#E7298A", FOM_sub="#7570B3",
+                     HUM_top="#66A61E", HUM_sub="#E6AB02",
+                     ROM_top="#1B9E77", ROM_sub="#D95F02")
+
+result_pools |> 
+  as.data.frame() |> 
+  pivot_longer(
+    cols = c("FOM_top","HUM_top","ROM_top",
+             "FOM_sub","HUM_sub","ROM_sub"), 
+    names_to = "pool",
+    values_to = "SOC" )|>  
+  mutate(pool = fct_relevel(pool, 
+                            "FOM_top", "FOM_sub", 
+                            "HUM_top", "HUM_sub",
+                            "ROM_top", "ROM_sub")) |> 
+  ggplot(aes(x=step,y=SOC,fill=pool))+
+  geom_col(position = "stack")+
+  scale_fill_manual(values = pool_cols)+
+  ylim(0,100)
