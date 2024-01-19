@@ -1,14 +1,33 @@
 
+#' .temp_coef
+#'
+#' @param T_zt 
+#'
+#' @return
+#'
+#' @examples
 .temp_coef =  function(T_zt) {
   
     return(7.24 * exp(-3.432 + 0.168 * T_zt * (1 - 0.5 * T_zt / 36.9)))
 }
 
+#' Title
+#'
+#' @param depth 
+#' @param month 
+#' @param T_ave 
+#' @param A_0 
+#' @param th_diff 
+#'
+#' @return
+#'
+#' @examples
 .soil_temp = function(depth,
                       month,
                       T_ave ,
                       A_0 ,
                       th_diff) {
+  
 
     # depth in meters#
     z = depth / 2 * 0.01
@@ -40,7 +59,6 @@
 #' @param k description
 #' @param tempCoefficient description
 #' @return T
-#' @export
 #' @examples
 
 .decay = function(CO_t, k, tempCoefficient ){

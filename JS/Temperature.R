@@ -1,4 +1,4 @@
-// add function to scrape temp data by coordinate
+#' TODO: add function to scrape temp data by coordinate
 
 
 #' prepare_temperature
