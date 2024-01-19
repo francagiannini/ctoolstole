@@ -28,5 +28,7 @@ run_ctool = function(time_config,
     return(out)
   })
   ctool = data.table::rbindlist(ctool)
+  
   return(cbind(time_config$timeperiod[,c('mon','yrs')], ctool))
 }
+

@@ -21,16 +21,18 @@ turnover = function(timestep,
   
   mon = time_config$timeperiod[timestep,'mon']
   yr = time_config$timeperiod[timestep,'id']
-
+  m_ctr = ifelse(cin_config$class=='csv', timestep, mon) # counter for management iteration 
+  c_ctr = ifelse(cin_config$class=='csv', timestep, yr) #counter for C inputs iteration
+  
   # FOM ----
-  FOM_top = update_monthly_FOM_top(FOM_top_t1 = out$FOM_top, Cin_plant_top = cin_config$Cin_top[yr] , Cin_manure = cin_config$Cin_man[yr], month = mon, m_config = m_config)
+  FOM_top = update_monthly_FOM_top(FOM_top_t1 = out$FOM_top, Cin_plant_top = cin_config$Cin_top[c_ctr] , Cin_manure = cin_config$Cin_man[c_ctr], timestep = m_ctr, m_config = m_config)
   FOM_top = FOM_top_calculations(FOM_top_t=FOM_top, month=mon, t_avg = t_config$Tavg[timestep], t_range=t_config$Trange_col[timestep], s_config)
   
-  FOM_sub = update_monthly_FOM_sub(FOM_sub_t1 = out$FOM_sub, FOM_transport = FOM_top$FOM_tr, C_in_plant_sub = cin_config$Cin_sub[yr], month = mon, m_config = m_config)
+  FOM_sub = update_monthly_FOM_sub(FOM_sub_t1 = out$FOM_sub, FOM_transport = FOM_top$FOM_tr, C_in_plant_sub = cin_config$Cin_sub[c_ctr], timestep = m_ctr, m_config = m_config)
   FOM_sub = FOM_sub_calculations(FOM_sub_t=FOM_sub, month=mon, t_avg = t_config$Tavg[timestep], t_range=t_config$Trange_col[timestep], s_config = s_config)
   
   # HUM ----
-  HUM_top = update_monthly_HUM_top(HUM_top_t1 = out$HUM_top, C_in_man = cin_config$Cin_man[yr], FOM_humified_top = FOM_top$FOM_humified_top, month = mon, m_config = m_config)
+  HUM_top = update_monthly_HUM_top(HUM_top_t1 = out$HUM_top, C_in_man = cin_config$Cin_man[c_ctr], FOM_humified_top = FOM_top$FOM_humified_top, timestep = m_ctr, m_config = m_config)
   HUM_top = HUM_top_calculations(HUM_top_t = HUM_top, month = mon, t_avg = t_config$Tavg[timestep], t_range=t_config$Trange_col[timestep], s_config = s_config)
   
   HUM_sub = update_monthly_HUM_sub(HUM_sub_t1 =out$HUM_sub, HUM_transport = HUM_top$HUM_tr, FOM_humified_sub = FOM_sub$FOM_humified_sub)
@@ -53,8 +55,6 @@ turnover = function(timestep,
   C_subsoil = FOM_sub$FOM_sub + HUM_sub$HUM_sub + ROM_sub$ROM_sub
   SOC_stock = C_subsoil + C_topsoil
   
-  check_balance = check_output(cin_config = cin_config, s_config = s_config, CO2_em = em_CO2_total, SOC_stock = SOC_stock)
-  
   return(as.data.frame(list(
     FOM_top,
     FOM_sub,
@@ -68,7 +68,6 @@ turnover = function(timestep,
     C_transport = HUM_top$HUM_tr + ROM_top$ROM_tr,
     em_CO2_top = em_CO2_top,
     em_CO2_sub = em_CO2_sub,
-    em_CO2_total = em_CO2_total,
-    check = check_balance
+    em_CO2_total = em_CO2_total
   )))
 }
