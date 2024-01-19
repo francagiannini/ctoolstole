@@ -24,6 +24,7 @@ FOM_top_calculations = function(FOM_top_t,
   em_CO2_FOM_top = substrate_FOM_decomp_top * (1-.hum_coef(s_config[['clay_top']]))
  # FOM_transport = (FOM_top_t+FOM_decomposition)  * s_config[['ftr']]
   FOM_top = FOM_top_t - FOM_humified_top - em_CO2_FOM_top 
+  FOM_top = .soil_pool_physical_restriction(FOM_top)
   
   return(list(
     FOM_top = FOM_top,
@@ -58,6 +59,7 @@ FOM_sub_calculations = function(FOM_sub_t,
   FOM_humified_sub  = substrate_FOM_decomp_sub * .hum_coef(s_config[['clay_top']])
   em_CO2_FOM_sub = substrate_FOM_decomp_sub * (1-.hum_coef(s_config[['clay_top']]))
   FOM_sub = FOM_sub_t - FOM_humified_sub - em_CO2_FOM_sub
+  FOM_sub = .soil_pool_physical_restriction(FOM_sub)
   
   return(list(
     FOM_sub = FOM_sub,

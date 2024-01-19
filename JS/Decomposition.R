@@ -88,7 +88,8 @@ soil_pool_decomposition = function(soil_pool = c('FOM_top','FOM_sub','HUM_top','
                                     s_config) {
   
   temp_coefficient = .temp_coef(T_zt=.soil_temp(depth=soil_depth, month = month, T_ave = t_avg, A_0 = t_range, th_diff = s_config[['phi']]))
-  
-  return(.decay(CO_t = soil_pool, k = k, tempCoefficient = temp_coefficient))
+  decay = .decay(CO_t = soil_pool, k = k, tempCoefficient = temp_coefficient)
+  return( .decay_physical_boundary(decay))
   rm(list='temp_coefficient')
 }
+

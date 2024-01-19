@@ -64,7 +64,7 @@ write_Cinput_management = function(yr_start=2006,
                          n) {
   
   df_Cin = read.csv(cin_filepath)
-
+  
   if (nrow(df_Cin) != n) { stop('Number of annual C inputs must be equal to the number of simulated years.') }
   return(list(
     Cin_top = df_Cin$Cin_plant_top,
@@ -136,6 +136,8 @@ define_Cinputs = function(cin_filepath = NULL,
   if (nrow(df_management) != n) {
     stop('Number of monthly allocation  must be equal to the number of simulated years.')
   }
+  df_management = .check_monthly_allocation_df(df_management)
+  
   return(list(
     f_man_humification = f_man_humification,
     manure_monthly_allocation = df_management$manure_monthly_allocation,
@@ -167,6 +169,9 @@ management_config = function(manag_filepath=NULL,
   
     n = time_config$steps
     if (length(plant_monthly_allocation)!=12 | length(manure_monthly_allocation)!=12) { stop('Vector must be of length 12 (1 for each month).') }
+    
+    plant_monthly_allocation = .check_monthly_allocation(plant_monthly_allocation)
+    manure_monthly_allocation = .check_monthly_allocation(manure_monthly_allocation)
     
     return(list(
       f_man_humification = f_man_humification,

@@ -21,6 +21,7 @@ ROM_top_calculations = function(ROM_top_t,
   em_CO2_ROM_top = substrate_ROM_decomp_top * s_config[['f_co2']]
   ROM_transport = (ROM_top_t+ROM_decomposition)  * s_config[['ftr']]
   ROM_top = ROM_top_t - em_CO2_ROM_top - ROM_transport
+  ROM_top = .soil_pool_physical_restriction(ROM_top)
   
   return(list(
     ROM_top = ROM_top,
@@ -53,6 +54,7 @@ ROM_sub_calculations = function(ROM_sub_t,
   substrate_ROM_decomp_sub = ROM_sub_t - (ROM_sub_t + ROM_decomposition) 
   em_CO2_ROM_sub = substrate_ROM_decomp_sub * s_config[['f_co2']]
   ROM_sub = ROM_sub_t - em_CO2_ROM_sub
+  ROM_sub = .soil_pool_physical_restriction(ROM_sub)
   
   return(list(
     ROM_sub = ROM_sub,
