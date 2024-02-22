@@ -10,20 +10,21 @@ library(tidyverse)
 
 ### Temperature ----- 
 # We set an scenario for the average condition of historical Foulum registers 
-temperatures <- read.table("InputFiles/temp55years.txt")
-colnames(temperatures) <- c("temp_m")
-head(temperatures)
 
-temp_minmax <- read.table("InputFiles/temp_ranges_foulum.txt", header = T) |> 
-  mutate(temp_amp =max-min)
+# temperatures <- read.table("InputFiles/temp55years.txt")
+# colnames(temperatures) <- c("temp_m")
+# head(temperatures)
+# 
+# temp_minmax <- read.table("InputFiles/temp_ranges_foulum.txt", header = T) |> 
+#   mutate(temp_amp =max-min)
+# 
+# temperatures <- temperatures |> mutate(month=rep(seq(1,12,1),55)) |> 
+#   group_by(month) |> 
+#   summarize(monthly_mean=mean(temp_m))
 
-temperatures <- temperatures |> mutate(month=rep(seq(1,12,1),55)) |> 
-  group_by(month) |> 
-  summarize(monthly_mean=mean(temp_m))
+T_ave <- rep(c(0.46,0.41,2.45,6.06,10.63,13.78,15.73,15.73,12.45,8.59,4.62,1.86),5)
 
-T_ave <- rep(temperatures$monthly_mean,5)
-
-T_range <- rep(temp_minmax$temp_amp, 5)
+T_range <- rep(c(4,5,6,8,9,9,9,8,7,6,5,5),5)
 
 ### Carbon inputs ----
 # Simple set up of a yearly C inputs
@@ -217,3 +218,5 @@ result_pools |>
   geom_col(position = "stack")+
   scale_fill_manual(values = pool_cols)+
   ylim(0,100)
+
+
