@@ -80,7 +80,7 @@ define_Cinputs = function(df_Cin = NULL,
 }
 
 
-// maybe add new function to mroe easily change monthky allocation
+#// maybe add new function to mroe easily change monthky allocation
 
 #' management_config
 #'

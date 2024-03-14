@@ -19,7 +19,7 @@ turnover = function(timestep,
                     t_config,
                     s_config,
                     out) {
-  
+  broswer()
   mon = time_config$timeperiod[timestep,'mon']
   yr = time_config$timeperiod[timestep,'id']
   #print(paste0('Yr No. ',yr,' Month no ',mon))

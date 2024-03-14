@@ -5,7 +5,7 @@ period
 management = management_config(manure_monthly_allocation = c(0,0,.5,.5,0,0,0,0,0,0,0,0)) # set to default
 soil = soil_config(clay_top = 0.25, clay_sub = 0.35, ftr = 0.003)
 cin = define_Cinputs(Cin_top = c(2,1.5,2,0.5,1), Cin_sub = rep(0.1,5), Cin_man = c(2,1,0.5,1.5,1), time_config = period)
-temp = prepare_temperature('c:/Users/João Serra/OneDrive/Modelling/ctool/Temp_foulum.csv','Tavg')
+temp = prepare_temperature('InputFiles/Temp_foulum.csv','Tavg')
 soil_pools = initialize_soil_pools(soil_config = soil)
 
 # run simulation ----
