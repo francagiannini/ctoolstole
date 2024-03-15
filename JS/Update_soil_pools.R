@@ -17,6 +17,8 @@ update_monthly_FOM_top = function(FOM_top_t1,
                                   month,
                                   m_config) {
   
+  
+  
   return(
     FOM_top_t1 +
       Cin_plant_top * m_config[['plant_monthly_allocation']][month] +
@@ -42,7 +44,7 @@ update_monthly_FOM_sub = function(FOM_sub_t1,
                                   month,
                                   m_config) {
   
-  return(FOM_sub_t1 +
+  return(FOM_sub_t1 + FOM_transport + 
            C_in_plant_sub * m_config[['plant_monthly_allocation']][month])
 }
 

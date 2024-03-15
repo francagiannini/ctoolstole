@@ -20,7 +20,7 @@ HUM_top_calculations = function(HUM_top_t,
   substrate_HUM_decomp_top = HUM_top_t - (HUM_top_t + HUM_decomposition) 
   HUM_romified_top  = substrate_HUM_decomp_top * s_config[['f_romi']]
   em_CO2_HUM_top = substrate_HUM_decomp_top * s_config[['f_co2']]
-  HUM_transport = (HUM_top_t+HUM_decomposition)  *(1-s_config[['f_co2']])
+  HUM_transport = (HUM_top_t+HUM_decomposition)  *(1-s_config[['f_romi']]-s_config[['f_co2']])
   HUM_top = HUM_top_t - HUM_romified_top - em_CO2_HUM_top - HUM_transport
   
   return(list(

@@ -21,8 +21,8 @@ FOM_top_calculations = function(FOM_top_t,
   FOM_decomposition = soil_pool_decomposition(soil_pool=FOM_top_t, k=s_config[['k_fom']], soil_depth=25, month=month, t_avg=t_avg, t_range=t_range, s_config)
   substrate_FOM_decomp_top = FOM_top_t - (FOM_top_t + FOM_decomposition) 
   FOM_transport= substrate_FOM_decomp_top* s_config[['ftr']]
-  FOM_humified_top  = (substrate_FOM_decomp_top-FOM_transport) * .hum_coef(s_config[['clay_top']])
-  em_CO2_FOM_top = (substrate_FOM_decomp_top-FOM_transport) * (1-.hum_coef(s_config[['clay_top']]))
+  FOM_humified_top  = (substrate_FOM_decomp_top - FOM_transport) * .hum_coef(s_config[['clay_top']])
+  em_CO2_FOM_top = (substrate_FOM_decomp_top - FOM_transport) * (1-.hum_coef(s_config[['clay_top']]))
  
   FOM_top = FOM_top_t - FOM_humified_top - em_CO2_FOM_top - FOM_transport
   
