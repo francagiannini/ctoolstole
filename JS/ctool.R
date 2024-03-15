@@ -18,7 +18,7 @@ run_ctool = function(time_config,
                      s_config,
                      soil_pools) {
   
-  
+  #TODO problems seems to be on the first timestep ----
   
   
   simul=1:time_config$steps
@@ -28,7 +28,11 @@ run_ctool = function(time_config,
     return(out)
   })
   ctool = data.table::rbindlist(ctool)
+  ctool = cbind(time_config$timeperiod[,c('mon','yrs')], ctool)
+  ctool$Cin_top = cin_config$Cin_top
+  ctool$Cin_sub = cin_config$Cin_sub
+  ctool$Cin_man = cin_config$Cin_man
   
-  return(cbind(time_config$timeperiod[,c('mon','yrs')], ctool))
+  return(ctool)
 }
 

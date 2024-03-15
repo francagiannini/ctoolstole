@@ -11,7 +11,7 @@
     return(7.24 * exp(-3.432 + 0.168 * T_zt * (1 - 0.5 * T_zt / 36.9)))
 }
 
-#' Title
+#' .soil_temp
 #'
 #' @param depth 
 #' @param month 

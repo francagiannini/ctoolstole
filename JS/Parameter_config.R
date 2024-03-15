@@ -280,7 +280,8 @@ soil_config = function(Csoil_init = 100,
   
   CNfraction = min(56.2 * cn ^ (-1.69), 1)
   
-  fom = 1-f_hum_top-f_rom_top
+  #fom = 1-f_hum_top-f_rom_top
+  fom = 0
   hum = ini_Cin_top * f_hum_top * CNfraction
   rom = ini_Cin_top -hum-fom
   
