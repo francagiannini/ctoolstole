@@ -17,7 +17,7 @@ aggregate_inputs = function(cin_config,
   return(list(
     c_ini = c_ini,
     C_inputs = C_inputs,
-    C_in_totals = C_in_totals
+    C_in_totals = c_in_totals
   ))
 }
 
@@ -56,7 +56,7 @@ check_output = function(cin_config,
                         SOC_stock) {
   
   c_in_totals = aggregate_inputs(cin_config, s_config)$C_in_totals
-  c_out_totals = aggregate_outputs(CO2_em, SOC_stock)$C_out_totals
+  c_out_totals = aggregate_outputs(CO2_em, SOC_stock)$c_out_totals
   balance = c_in_totals - c_out_totals
   
   if (sum(balance)!=0) { stop('Balance must be 0; needs debugging')}
