@@ -133,10 +133,10 @@ management_config = function(f_man_humification=0.192,
 #' @export
 #'
 #' @examples
-soil_config = function(Csoil_init = 100,
-                       f_hum_top = 0.4803,
-                       f_rom_top = 0.4881,
-                       f_hum_sub = 0.3123,
+soil_config = function(Csoil_init = 70.4,
+                       f_hum_top = 0.48,
+                       f_rom_top = 0.49,
+                       f_hum_sub = 0.312,
                        f_rom_sub = 0.6847,
                        Cproptop = 0.47,
                        clay_top = 0.1,
@@ -147,8 +147,9 @@ soil_config = function(Csoil_init = 100,
                        k_fom  = 0.12,
                        k_hum = 0.0028, 
                        k_rom = 3.85e-5,
-                       ftr = 0,
-                       cn = 10) {
+                       ftr = 0.003,
+                       cn = 7.166667) {
+
   
   return(list(
     Csoil_init = Csoil_init,
@@ -202,8 +203,16 @@ soil_config = function(Csoil_init = 100,
   hum = ini_Cin_top * f_hum_top * CNfraction
   rom = ini_Cin_top -hum-fom
   
-  if (soil_surf=='top') { return(list(FOM_top=fom,HUM_top=hum,ROM_top=rom)) }
-  else { return(list(FOM_sub=fom,HUM_sub=hum,ROM_sub=rom)) } 
+  if (soil_surf=='top') { 
+    return(list(FOM_top=fom,
+                HUM_top=hum,
+                ROM_top=rom)) 
+  }
+  else { 
+    return(list(FOM_sub=fom,
+                HUM_sub=hum,
+                ROM_sub=rom)) 
+  } 
 }
 
 
