@@ -1,4 +1,4 @@
-#' turnover
+#' turnover-rCTOOL
 #'
 #' @param timestep 
 #' @param timeperiod 

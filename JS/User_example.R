@@ -1,4 +1,5 @@
-temp_minmax = read.table("c:/Users/João Serra/Downloads/temp_ranges_foulum.txt", header = T) |> 
+temp_minmax = read.table("c:/Users/João Serra/Downloads/temp_ranges_foulum.txt", 
+                         header = T) |> 
   mutate(temp_amp =max-min) 
 
 # set simulation parameters ----
@@ -10,7 +11,12 @@ temp = prepare_temperature('c:/Users/João Serra/OneDrive/Modelling/ctool/Temp_f
 soil_pools = initialize_soil_pools(soil_config = soil)
 
 # run simulation ----
-ctool = run_ctool(time_config = period, cin_config = cin, m_config = management, t_config = temp, s_config = soil, soil_pools = soil_pools)
+ctool = run_ctool(time_config = period, 
+                  cin_config = cin, 
+                  m_config = management, 
+                  t_config = temp, 
+                  s_config = soil, 
+                  soil_pools = soil_pools)
 initial <- soil$Csoil_init
 int = sum(cin$Cin_top) + sum(cin$Cin_sub) + sum(cin$Cin_man)
 st = ctool$C_topsoil[60] + ctool$C_subsoil[60]
