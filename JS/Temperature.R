@@ -1,3 +1,6 @@
+#' TODO: add function to scrape temp data by coordinate
+
+
 #' prepare_temperature
 #'
 #' @param filepath 
