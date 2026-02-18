@@ -31,6 +31,11 @@ month_man=c(0,0,100,0,0,0,0,0,0,0,0,0)/100
 #month_man=c(0,10,25,50,10,5,0,0,0,0,0,0)/100 #bare soil
 #month_man=c(0,0,25,0,0,50,0,0,0,25,0,0)/100 #cc #perennial
 
+pool_top <-ifelse(y=="1" & m=="1", init_pool_top, pool_top)
+
+pool_sub <-ifelse(y=="1" & m=="1", init_pool_sub, pool_sub)
+
+
 Cinp_plant_top <- cinp$Cinp_plant_top[y]*month_prop[m]
 
 Cinp_plant_sub <- cinp$Cinp_plant_sub[y]*month_prop[m]
@@ -38,40 +43,112 @@ Cinp_plant_sub <- cinp$Cinp_plant_sub[y]*month_prop[m]
 # manure 
 fHUM_man_rate=soil_df$HumFraction_manure #0.192  feaces # 0.63 #digested feaces #0.39 #digested feed
 
-hum_man_inp <- fHUM_man*cinp$Cinp_Cmanure[y]*month_man[m]
+hum_man_inp <- fHUM_man_rate*cinp$Cinp_Cmanure[y]*month_man[m]
 
 fom_man_inp <- cinp$Cinp_Cmanure[y]*month_man[m] - hum_man_inp
 
-t_coef <- temp_coef(T_zt = soil_temp(depth= 0.25/2,
-                                        month=j,
-                                        T_ave= temperatures[y-1+m,],
-                                        A_0= 25.09995,
-                                        th_diff=0.035))
-
-
 #
-FOM_0=0
+FOM_0 = c(pool_top["FOM"]+fom_man_inp+Cinp_plant_top,
+          pool_sub["FOM"]+fom_man_inp+Cinp_plant_sub)
 
-FOM=0+#ifelse(y=1 %&% m=1,init_pool_top["FOM"], FOM_0)+
-  Cinp_plant_top-decay(amount_t=Cinp_plant_top,
-                               k=soil_df$FOMdecompositionrate_crop,
-                               tempCoefficient = t_coef
-                               )+
-  fom_man_inp
+t_coef <- temp_coef(
+      T_zt = soil_temp(
+        depth = c(0.25 / 2, 0.25+(1-0.25)/2),
+        month = m,
+        T_ave = temperatures[y - 1 + m,],
+        A_0 = 25.09995,
+        th_diff = 0.035
+      ))
+  
+FOM_after_decomp = FOM_0+decay(
+    amount_t = FOM_0,
+    k = soil_df$FOMdecompositionrate_crop,
+    tempCoefficient = t_coef)
 
-FOM=init_pool_top["HUM"]+Cinp_plant_top+hum_man_inp
+tr_FOM= c(FOM_after_decomp[1]*soil_df$tF_crop,0)
+
+C02_FOM=(FOM_after_decomp-tr_FOM)*hum_coef(clayfrac = c(soil_df$clayfraction_crop, soil_df$clayfraction_crop))
+
+FOM_next=FOM_after_decomp-tr_FOM-C02_FOM
+
+FOMtoHUM=FOM_after_decomp*hum_coef(clayfrac = c(soil_df$clayfraction_crop, soil_df$clayfraction_crop))
+
+HUM_0=pool_top["HUM"]+c(hum_man_inp+FOMtoHUM
+
+HUM_after_decomp = HUM_0+decay(
+  amount_t = HUM_0,
+  k = soil_df$HUMdecompositionrate_crop,
+  tempCoefficient = t_coef)
+
+tr_HUM= c(HUM_after_decomp[1]*soil_df$tF_crop,0)
+
+C02_HUM=(HUM_after_decomp-tr_HUM)*0.628
 
 
-#kFOM should be affected by temp 
+#   
+#   FOM_plant=FOM_now
 
-tempCofficent <- tempdependence()
 
-kFOM <- soil_df$FOMdecompositionrate_crop*tempCofficent
 
-fom_decomp <- (fomprev+fom_add_plant_top)*kFOM
 
-fom_toLowerLayer<- fom_afte_fomdecomp*soil_df$tF_crop
 
+tr_HUM= (FOM_0-FOMtoHUM)*soil_df$tF_crop
+  
+
+FOM_plant = FOM_0 -  +
+  fom_man_inp-co2_FOM-tr_FOM
+
+# Decomposition functions 
+
+# bce_FOMpool <- function(Cinit,
+#                         decomp_rate,
+#                         tr_rate,
+#                         resp_frac,
+#                         y,
+#                         m) {
+#   
+#   Cinp_plant <- c(
+#     cinp$Cinp_plant_top[y] * month_prop[m],
+#     cinp$Cinp_plant_sub[y] * month_prop[m]
+#   )
+#   
+#   t_coef <- temp_coef(
+#     T_zt = soil_temp(
+#       depth = c(0.25 / 2, 0.25+(1-0.25)/2),
+#       month = m,
+#       T_ave = temperatures[y - 1 + m,],
+#       A_0 = 25.09995,
+#       th_diff = 0.035
+#     ))
+#   
+#   FOM_after_decomp <- Cinp_plant - decay(
+#     amount_t = Cinp_plant,
+#     k = soil_df$FOMdecompositionrate_crop,
+#     tempCoefficient = t_coef
+#   )
+#   
+#   FOM_now=FOM_before+FOM_after_decomp
+#   
+#   tr_FOM= FOM_now[1]*soil_df$tF_crop
+#   
+#   FOM_plant=FOM_now
+# }
+# FOM_plant = c(init_pool_top["FOM"]+fom_man_inp+Cinp_plant_top,
+#               init_pool_sub["FOM"]+Cinp_plant_sub)
+# 
+# HUM_Plant = c(init_pool_top["HUM"]+hum_man_inp,
+#               init_pool_sub["HUM"])
+# 
+# # ROM_Plant = c(init_pool_top["ROM"],
+# #               init_pool_sub["ROM"])
+# 
+# 
+# tr_HUM=
+# tr_ROM=
+# 
+# co2_FOM=FOM_0*hum_coef(clayfrac = soil_df$clayfraction_crop)
+# co2_HUM=
+# co2_ROM=
 
 
 

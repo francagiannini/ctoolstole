@@ -8,5 +8,7 @@ devtools::install("C:/Users/au710823/OneDrive - Aarhus universitet/rCTOOL")
 
 library(rCTOOL)
 
-hello(who="dummy Franca")
+hello(who="idiot Franca")
+
+
 
