@@ -1,4 +1,5 @@
-#' update_FOM_top
+
+ #' update_FOM_top
 #'
 #' @param FOM_top_t1 
 #' @param Cin_plant 
@@ -20,6 +21,14 @@ update_monthly_FOM_top = function(FOM_top_t1,
     Cin_manure * (1-m_config[['f_man_humification']])*m_config[['manure_monthly_allocation']][timestep] 
   FOM_top = .soil_pool_physical_restriction(FOM_top)
   return(FOM_top)
+  
+  
+  
+  return(
+    FOM_top_t1 +
+      Cin_plant_top * m_config[['plant_monthly_allocation']][month] +
+      Cin_manure * (1-m_config[['f_man_humification']])*m_config[['manure_monthly_allocation']][month] 
+  )
 }
 
 
@@ -44,6 +53,9 @@ update_monthly_FOM_sub = function(FOM_sub_t1,
     C_in_plant_sub * m_config[['plant_monthly_allocation']][timestep]
   FOM_sub = .soil_pool_physical_restriction(FOM_sub)
   return(FOM_sub)
+  
+  return(FOM_sub_t1 + FOM_transport + 
+           C_in_plant_sub * m_config[['plant_monthly_allocation']][month])
 }
 
 #' update_monthly_HUM_top

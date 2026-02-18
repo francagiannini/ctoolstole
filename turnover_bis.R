@@ -16,6 +16,13 @@ turnover <- function(i) {
              as.numeric(result_pools[, "yr"]),
              as.numeric(result_pools[, "yr"]) + 1)
   
+  if (Crop[y] == 'Grass') {
+    month_prop = month_prop_grass
+  } else {
+    month_prop = month_prop_grain
+  }
+  
+  
   # FOM topsoil ----
   
   FOM_top <-
@@ -41,19 +48,22 @@ turnover <- function(i) {
   
   substrate_FOM_decomp_top <- FOM_top - FOM_after_decomp_top
   
+  FOM_tr <- substrate_FOM_decomp_top * ftr
+  
   FOM_humified_top <-
-    substrate_FOM_decomp_top * hum_coef(clayfrac = clay_top)
+    (substrate_FOM_decomp_top-FOM_tr) * hum_coef(clayfrac = clay_top)
   
   CO2_FOM_top <-
-    substrate_FOM_decomp_top * (1 - hum_coef(clayfrac = clay_top))
+    (substrate_FOM_decomp_top-FOM_tr) * (1 - hum_coef(clayfrac = clay_top))
   
-  FOM_top <- FOM_top - FOM_humified_top - CO2_FOM_top
+  FOM_top <- FOM_top - FOM_humified_top - CO2_FOM_top - FOM_tr
   
   # FOM subsoil ----
   
   FOM_sub <-
     result_pools[, "FOM_sub"] +
-    C_input_sub[y] * month_prop[m]
+    C_input_sub[y] * month_prop[m]+
+    FOM_tr
   
   FOM_after_decomp_sub <-
     FOM_sub +
